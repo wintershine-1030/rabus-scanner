@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rabus Security Scanner API Docs</title>
+    <meta name="description" content="Rabus Security Scanner API for Solana – scan transactions, addresses, and programs for security risks, get reports, and integrate webhooks." />
+    <meta name="theme-color" content="#0f172a" />
+
+    <meta property="og:title" content="Rabus Security Scanner API Docs" />
+    <meta property="og:description" content="Solana security scanning API: scan transactions, addresses, and programs. Professional documentation with examples." />
+    <meta property="og:type" content="website" />
+
+    
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#overview" aria-label="Rabus Security Scanner">
+        <span class="brand-text">Rabus Security Scanner</span>
+        <span class="brand-badge">API</span>
+      </a>
+      <div class="header-actions">
+        <div class="search">
+          <input id="searchInput" type="search" placeholder="Search docs..." aria-label="Search docs" />
+          <kbd class="shortcut">/</kbd>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
+        <nav>
+          <ul id="toc">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#quickstart">Quickstart</a></li>
+            <li><a href="#auth">Authentication</a></li>
+            <li><a href="#endpoints">Endpoints</a>
+              <ul>
+                <li><a href="#scan-transaction">Scan Transaction</a></li>
+                <li><a href="#scan-address">Scan Address</a></li>
+                <li><a href="#scan-program">Scan Program</a></li>
+                <li><a href="#get-scan">Get Scan</a></li>
+                <li><a href="#get-report">Get Report</a></li>
+                <li><a href="#list-scans">List Scans</a></li>
+              </ul>
+            </li>
+            <li><a href="#webhooks">Webhooks</a></li>
+            <li><a href="#errors">Errors</a></li>
+            <li><a href="#rate-limits">Rate Limits</a></li>
+            <li><a href="#idempotency">Idempotency</a></li>
+            <li><a href="#sdks">SDK Examples</a></li>
+            <li><a href="#glossary">Glossary</a></li>
+            <li><a href="#changelog">Changelog</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main id="content" class="content" tabindex="-1">
+        <article id="overview" class="doc-section">
+          <h1>Overview</h1>
+          <p><strong>Rabus Security Scanner</strong> is a professional security analysis service for the <strong>Solana</strong> ecosystem, designed to evaluate transactions, addresses, and programs for risks and misconfigurations.
+          <br />
+
+          <div class="callout info">
+            <div class="callout-title">Base URL</div>
+            <p><code>https://api.rabus.security</code></p>
+            <p>API Version: <code>v1</code>. All endpoints below are prefixed with <code>/v1</code>.</p>
+          </div>
+
+          <p>Use this API to submit scans, retrieve structured reports, and automate security checks in your pipelines.</p>
+        </article>
+
+        <article id="quickstart" class="doc-section">
+          <h2>Quickstart</h2>
+          <ol>
+            <li>Create an account and generate an API key in the Rabus dashboard.</li>
+            <li>Send a test request to verify connectivity.</li>
+            <li>Submit a scan and poll for completion or use webhooks.</li>
+          </ol>
+
+          <h3>Ping</h3>
+          <p>Confirm the API is reachable.</p>
+          <pre><code class="language-bash">curl -s https://api.rabus.security/v1/ping</code></pre>
+
+          <h3>First scan (transaction)</h3>
+          <pre><code class="language-bash">curl -X POST https://api.rabus.security/v1/solana/scan/transaction \ 
+  -H "Authorization: Bearer &lt;API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "signature": "5pJj...yKcG",
+    "network": "mainnet-beta",
+    "options": { "ruleset": "default", "severityThreshold": "medium" }
+  }'</code></pre>
+        </article>
+
+        <article id="auth" class="doc-section">
+          <h2>Authentication</h2>
+          <p>Authenticate using the <code>Authorization</code> header with a Bearer token.</p>
+          <pre><code class="language-http">Authorization: Bearer &lt;API_KEY&gt;</code></pre>
+          <p>Keys are scoped and rate-limited. Rotate keys regularly and store them securely.</p>
+        </article>
+
+        <article id="endpoints" class="doc-section">
+          <h2>Endpoints</h2>
+
+          <section id="scan-transaction" class="endpoint">
+            <h3>Scan Transaction</h3>
+            <p><strong>POST</strong> <code>/v1/solana/scan/transaction</code></p>
+            <details open>
+              <summary>Request</summary>
+              <pre><code class="language-json">{
+  "signature": "5pJj...yKcG",
+  "network": "mainnet-beta", // or "devnet"
+  "options": {
+    "ruleset": "default",
+    "severityThreshold": "medium"
+  }
+}</code></pre>
+            </details>
+            <details open>
+              <summary>Response (202 Accepted)</summary>
+              <pre><code class="language-json">{
+  "scanId": "scn_01J1ZKX6Q1X3M6C0C0X6",
+  "status": "queued",
+  "resource": "transaction",
+  "submittedAt": "2025-06-20T12:34:56Z"
+}</code></pre>
+            </details>
+          </section>
+
+          <section id="scan-address" class="endpoint">
+            <h3>Scan Address</h3>
+            <p><strong>POST</strong> <code>/v1/solana/scan/address</code></p>
+            <details>
+              <summary>Request</summary>
+              <pre><code class="language-json">{
+  "address": "8fj1...KxVZ",
+  "network": "mainnet-beta",
+  "options": {
+    "depth": 100,              // analyze recent N transactions
+    "ruleset": "wallet-hardening"
+  }
+}</code></pre>
+            </details>
+            <details>
+              <summary>Response (202 Accepted)</summary>
+              <pre><code class="language-json">{
+  "scanId": "scn_01J1ZL3S6K6PB6N8K7ZQ",
+  "status": "queued",
+  "resource": "address"
+}</code></pre>
+            </details>
+          </section>
+
+          <section id="scan-program" class="endpoint">
+            <h3>Scan Program</h3>
+            <p><strong>POST</strong> <code>/v1/solana/scan/program</code></p>
+            <details>
+              <summary>Request</summary>
+              <pre><code class="language-json">{
+  "programId": "BPFLoaderUpgradeab1e11111111111111111111111",
+  "network": "mainnet-beta",
+  "options": {
+    "sourceHint": "on-chain",
+    "ruleset": "program-secure"
+  }
+}</code></pre>
+            </details>
+            <details>
+              <summary>Response (202 Accepted)</summary>
+              <pre><code class="language-json">{
+  "scanId": "scn_01J1ZL9V9YV1J6T8Q4R5",
+  "status": "queued",
+  "resource": "program"
+}</code></pre>
+            </details>
+          </section>
+
+          <section id="get-scan" class="endpoint">
+            <h3>Get Scan</h3>
+            <p><strong>GET</strong> <code>/v1/scans/{scanId}</code></p>
+            <details open>
+              <summary>Response (200 OK)</summary>
+              <pre><code class="language-json">{
+  "scanId": "scn_01J1ZKX6Q1X3M6C0C0X6",
+  "status": "completed", // queued | running | completed | failed
+  "resource": "transaction",
+  "summary": {
+    "riskScore": 72,
+    "severity": "high",
+    "issues": 4
+  },
+  "links": {
+    "report": "/v1/scans/scn_01J1ZKX6Q1X3M6C0C0X6/report"
+  }
+}</code></pre>
+            </details>
+          </section>
+
+          <section id="get-report" class="endpoint">
+            <h3>Get Report</h3>
+            <p><strong>GET</strong> <code>/v1/scans/{scanId}/report</code></p>
+            <p>Use <code>Accept</code> to select format: <code>application/json</code> or <code>application/pdf</code>.</p>
+            <pre><code class="language-bash">curl -H "Authorization: Bearer &lt;API_KEY&gt;" \
+  -H "Accept: application/json" \
+  https://api.rabus.security/v1/scans/&lt;scanId&gt;/report</code></pre>
+          </section>
+
+          <section id="list-scans" class="endpoint">
+            <h3>List Scans</h3>
+            <p><strong>GET</strong> <code>/v1/scans?status=completed&amp;limit=20</code></p>
+            <details>
+              <summary>Response (200 OK)</summary>
+              <pre><code class="language-json">{
+  "items": [
+    { "scanId": "scn_...", "status": "completed", "resource": "transaction" },
+    { "scanId": "scn_...", "status": "failed", "resource": "program" }
+  ],
+  "nextCursor": null
+}</code></pre>
+            </details>
+          </section>
+        </article>
+
+        <article id="webhooks" class="doc-section">
+          <h2>Webhooks</h2>
+          <p>Receive notifications when scans complete or fail.</p>
+          <p><strong>POST</strong> <code>/v1/webhooks</code></p>
+          <details open>
+            <summary>Register</summary>
+            <pre><code class="language-json">{
+  "url": "https://example.com/webhooks/rabus",
+  "events": ["scan.completed", "scan.failed"],
+  "secret": "whsec_9U..."
+}</code></pre>
+          </details>
+          <details>
+            <summary>Delivery example</summary>
+            <pre><code class="language-json">{
+  "id": "evt_01J1ZNK8...",
+  "type": "scan.completed",
+  "createdAt": "2025-06-20T12:35:30Z",
+  "data": {
+    "scanId": "scn_01J1ZKX6...",
+    "resource": "transaction",
+    "summary": { "riskScore": 12, "severity": "low", "issues": 0 }
+  }
+}</code></pre>
+          </details>
+          <div class="callout warn">
+            <div class="callout-title">Security</div>
+            <p>Verify the <code>Rabus-Signature</code> header using your webhook <code>secret</code>. Reject unsigned or invalid requests.</p>
+          </div>
+        </article>
+
+        <article id="errors" class="doc-section">
+          <h2>Errors</h2>
+          <p>Standardized error structure:</p>
+          <pre><code class="language-json">{
+  "error": {
+    "code": "invalid_request",
+    "message": "Signature is required",
+    "details": [{ "path": "signature", "reason": "missing" }]
+  }
+}</code></pre>
+          <ul>
+            <li><strong>400</strong>: Invalid request</li>
+            <li><strong>401</strong>: Unauthorized</li>
+            <li><strong>403</strong>: Forbidden</li>
+            <li><strong>404</strong>: Not found</li>
+            <li><strong>409</strong>: Conflict</li>
+            <li><strong>422</strong>: Unprocessable entity</li>
+            <li><strong>429</strong>: Too many requests</li>
+            <li><strong>500</strong>: Server error</li>
+          </ul>
+        </article>
+
+        <article id="rate-limits" class="doc-section">
+          <h2>Rate Limits</h2>
+          <p>Default: <strong>120 requests/min</strong> per API key. Headers:</p>
+          <pre><code class="language-http">Rabus-RateLimit-Limit: 120
+Rabus-RateLimit-Remaining: 87
+Rabus-RateLimit-Reset: 1718205600</code></pre>
+        </article>
+
+        <article id="idempotency" class="doc-section">
+          <h2>Idempotency</h2>
+          <p>Provide <code>Idempotency-Key</code> for safely retrying POST requests.</p>
+          <pre><code class="language-http">Idempotency-Key: 2c5bb3c6-1f75-4b4b-8a0c-ef3a0e7d7a41</code></pre>
+        </article>
+
+        <article id="sdks" class="doc-section">
+          <h2>SDK Examples</h2>
+          <h3>JavaScript (fetch)</h3>
+          <pre><code class="language-javascript">const BASE_URL = "https://api.rabus.security/v1";
+const API_KEY = process.env.RABUS_API_KEY;
+
+async function scanTransaction(signature) {
+  const res = await fetch(`${BASE_URL}/solana/scan/transaction`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${API_KEY}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    body: JSON.stringify({ signature, network: "mainnet-beta", options: { ruleset: "default" } }),
+  });
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  return res.json();
+}
+
+async function getScan(scanId) {
+  const res = await fetch(`${BASE_URL}/scans/${scanId}`, {
+    headers: { Authorization: `Bearer ${API_KEY}` },
+  });
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  return res.json();
+}</code></pre>
+        </article>
+
+        <article id="glossary" class="doc-section">
+          <h2>Glossary</h2>
+          <ul>
+            <li><strong>Ruleset</strong>: A predefined set of checks applied during scanning.</li>
+            <li><strong>Risk Score</strong>: 0–100; higher means more risk.</li>
+            <li><strong>Severity</strong>: low | medium | high | critical</li>
+          </ul>
+        </article>
+
+        <article id="changelog" class="doc-section">
+          <h2>Changelog</h2>
+          <ul>
+            <li><strong>v1.0</strong>: Initial public API and docs.</li>
+          </ul>
+        </article>
+
+        <footer class="site-footer">
+          <p>© <span id="year"></span> Rabus Security. All rights reserved.</p>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
+
+
